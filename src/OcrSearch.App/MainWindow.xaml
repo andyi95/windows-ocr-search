@@ -1,0 +1,53 @@
+<Window x:Class="OcrSearch.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OcrSearch — search text in screenshots"
+        Width="1000" Height="700"
+        WindowStartupLocation="CenterScreen"
+        FocusManager.FocusedElement="{Binding ElementName=QueryBox}">
+    <DockPanel Margin="8">
+        <TextBox x:Name="QueryBox" DockPanel.Dock="Top" FontSize="16" Padding="6"
+                 TextChanged="QueryBox_TextChanged" />
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="Starting…" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <Button x:Name="ReindexButton" Content="Reindex" Padding="8,2"
+                        Click="Reindex_Click" />
+            </StatusBarItem>
+        </StatusBar>
+        <ListBox x:Name="ResultsList" Margin="0,8"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 VirtualizingPanel.ScrollUnit="Pixel"
+                 MouseDoubleClick="ResultsList_MouseDoubleClick">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Open" Click="Open_Click" />
+                                <MenuItem Header="Show in Explorer" Click="ShowInExplorer_Click" />
+                                <MenuItem Header="Copy path" Click="CopyPath_Click" />
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                        <Image Source="{Binding Thumbnail}" Width="230" MaxHeight="160"
+                               Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Path}" Foreground="Gray" FontSize="11"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Snippet}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>
