@@ -1,0 +1,52 @@
+<Window x:Class="OcrSearch.App.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Width="560" Height="440"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Folders to index (recursive):" />
+        <ListBox x:Name="FoldersList" Grid.Row="1" Margin="0,4,0,0" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+            <Button Content="Add…" Padding="8,2" Click="AddFolder_Click" />
+            <Button Content="Remove" Padding="8,2" Margin="8,0,0,0" Click="RemoveFolder_Click" />
+        </StackPanel>
+
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="OCR language:" VerticalAlignment="Center" />
+            <ComboBox x:Name="LanguageBox" Grid.Column="1" />
+        </Grid>
+
+        <Grid Grid.Row="4" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Extensions:" VerticalAlignment="Center" />
+            <TextBox x:Name="ExtensionsBox" Grid.Column="1" Padding="4,2" />
+        </Grid>
+
+        <DockPanel Grid.Row="5" Margin="0,12,0,0">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Save" MinWidth="80" Padding="8,2" IsDefault="True" Click="Save_Click" />
+                <Button Content="Cancel" MinWidth="80" Padding="8,2" Margin="8,0,0,0" IsCancel="True" />
+            </StackPanel>
+            <TextBlock Text="Saving restarts indexing; a language change re-OCRs every file."
+                       Foreground="Gray" FontSize="11" VerticalAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,0,12,0" />
+        </DockPanel>
+    </Grid>
+</Window>

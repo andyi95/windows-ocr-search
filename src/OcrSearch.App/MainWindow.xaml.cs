@@ -12,7 +12,11 @@ public partial class MainWindow : Window
 {
     private readonly IndexStore _store = new(Config.DbPath);
     private readonly DispatcherTimer _searchDebounce;
-    private bool _indexing;
+    private AppSettings _settings = AppSettings.Load();
+    private CancellationTokenSource? _indexCts;
+    private Task? _indexTask;
+    private bool _restartPending;
+    private bool _closed;
 
     public MainWindow()
     {
@@ -24,28 +28,41 @@ public partial class MainWindow : Window
             RunSearch();
         };
         Loaded += (_, _) => StartIndexing();
-        Closed += (_, _) => _store.Dispose();
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            _indexCts?.Cancel();
+            _store.Dispose();
+        };
     }
+
+    private bool Indexing => _indexTask is { IsCompleted: false };
 
     private async void StartIndexing()
     {
-        if (_indexing)
+        if (Indexing)
         {
             return;
         }
-        var engine = WindowsMediaOcrEngine.TryCreate(Config.OcrLanguage);
+        var engine = WindowsMediaOcrEngine.TryCreate(_settings.OcrLanguage);
         if (engine is null)
         {
-            StatusText.Text = $"Windows OCR pack for language '{Config.OcrLanguage}' is not installed";
+            StatusText.Text = $"Windows OCR pack for language '{_settings.OcrLanguage}' is not installed";
             return;
         }
 
-        _indexing = true;
-        ReindexButton.IsEnabled = false;
+        _indexCts = new CancellationTokenSource();
+        var token = _indexCts.Token;
+        ReindexButton.Content = "Stop";
         var progress = new Progress<string>(message => StatusText.Text = message);
         try
         {
-            await Task.Run(() => Indexer.RunAsync(_store, engine, progress, CancellationToken.None));
+            _indexTask = Task.Run(() => Indexer.RunAsync(_store, engine, _settings, progress, token));
+            await _indexTask;
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Indexing stopped — press Reindex to resume";
         }
         catch (Exception e)
         {
@@ -53,13 +70,51 @@ public partial class MainWindow : Window
         }
         finally
         {
-            _indexing = false;
-            ReindexButton.IsEnabled = true;
-            RunSearch();
+            if (!_closed)
+            {
+                ReindexButton.Content = "Reindex";
+                RunSearch();
+            }
+        }
+        if (_restartPending && !_closed)
+        {
+            _restartPending = false;
+            StartIndexing();
         }
     }
 
-    private void Reindex_Click(object sender, RoutedEventArgs e) => StartIndexing();
+    private void Reindex_Click(object sender, RoutedEventArgs e)
+    {
+        if (Indexing)
+        {
+            _indexCts!.Cancel();
+        }
+        else
+        {
+            StartIndexing();
+        }
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SettingsWindow(_settings) { Owner = this };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+        _settings = dialog.Result;
+        _settings.Save();
+        if (Indexing)
+        {
+            // A running pass keeps the old settings — stop it and restart once it winds down.
+            _restartPending = true;
+            _indexCts!.Cancel();
+        }
+        else
+        {
+            StartIndexing();
+        }
+    }
 
     private void QueryBox_TextChanged(object sender, TextChangedEventArgs e)
     {

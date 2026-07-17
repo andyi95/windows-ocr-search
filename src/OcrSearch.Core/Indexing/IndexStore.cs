@@ -140,7 +140,10 @@ public sealed class IndexStore : IDisposable
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                hits.Add(new SearchHit(reader.GetString(0), reader.GetString(1)));
+                // Stored text keeps OCR line breaks; collapse whitespace so the snippet reads as one line.
+                var snippet = string.Join(' ',
+                    reader.GetString(1).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+                hits.Add(new SearchHit(reader.GetString(0), snippet));
             }
             return hits;
         }

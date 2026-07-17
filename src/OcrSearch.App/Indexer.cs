@@ -4,21 +4,24 @@ using OcrSearch.Core.Ocr;
 
 namespace OcrSearch.App;
 
-/// <summary>One indexing pass: a fresh snapshot of the folders from Config is reconciled against the DB.</summary>
+/// <summary>One indexing pass: a fresh snapshot of the configured folders is reconciled against the DB.</summary>
 internal static class Indexer
 {
     public static async Task RunAsync(
-        IndexStore store, IOcrEngine engine, IProgress<string> status, CancellationToken cancellationToken)
+        IndexStore store, IOcrEngine engine, AppSettings settings,
+        IProgress<string> status, CancellationToken cancellationToken)
     {
         status.Report("Scanning folders…");
         var files = new List<FileInfo>();
         var enumeration = new EnumerationOptions { IgnoreInaccessible = true, RecurseSubdirectories = true };
-        foreach (var root in Config.Folders.Where(Directory.Exists))
+        foreach (var root in settings.Folders.Where(Directory.Exists))
         {
             files.AddRange(new DirectoryInfo(root)
                 .EnumerateFiles("*", enumeration)
-                .Where(f => Config.ImageExtensions.Contains(f.Extension.ToLowerInvariant())));
+                .Where(f => settings.Extensions.Contains(f.Extension.ToLowerInvariant())));
         }
+        // Overlapping roots (a folder plus its own subfolder) must not process the same file twice.
+        files = files.DistinctBy(f => f.FullName, StringComparer.OrdinalIgnoreCase).ToList();
 
         // Files gone from disk are removed from the index so search doesn't return dead paths.
         var onDisk = files.Select(f => f.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -30,8 +33,9 @@ internal static class Indexer
             }
         }
 
+        var engineId = $"{engine.EngineId}+{OcrTextCleaner.Version}";
         var pending = files
-            .Where(f => !store.IsUpToDate(f.FullName, f.Length, f.LastWriteTimeUtc.Ticks, engine.EngineId))
+            .Where(f => !store.IsUpToDate(f.FullName, f.Length, f.LastWriteTimeUtc.Ticks, engineId))
             .ToList();
 
         var done = 0;
@@ -41,7 +45,7 @@ internal static class Indexer
             string text;
             try
             {
-                text = (await engine.RecognizeAsync(file.FullName, cancellationToken)).Text;
+                text = OcrTextCleaner.Clean((await engine.RecognizeAsync(file.FullName, cancellationToken)).Text);
             }
             catch (OperationCanceledException)
             {
@@ -53,7 +57,7 @@ internal static class Indexer
                 // doesn't trip us up again on every run.
                 text = "";
             }
-            store.Upsert(file.FullName, file.Length, file.LastWriteTimeUtc.Ticks, engine.EngineId, text);
+            store.Upsert(file.FullName, file.Length, file.LastWriteTimeUtc.Ticks, engineId, text);
             done++;
             status.Report($"Indexing: {done}/{pending.Count} — {file.Name}");
         }

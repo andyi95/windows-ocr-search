@@ -13,8 +13,12 @@
                 <TextBlock x:Name="StatusText" Text="Starting…" />
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
-                <Button x:Name="ReindexButton" Content="Reindex" Padding="8,2"
-                        Click="Reindex_Click" />
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Settings…" Padding="8,2" Margin="0,0,8,0"
+                            Click="Settings_Click" />
+                    <Button x:Name="ReindexButton" Content="Reindex" Padding="8,2" MinWidth="64"
+                            Click="Reindex_Click" />
+                </StackPanel>
             </StatusBarItem>
         </StatusBar>
         <ListBox x:Name="ResultsList" Margin="0,8"
