@@ -2,12 +2,18 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\app-icon.ico" />
+    <Resource Include="Assets\app-icon.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\OcrSearch.Core\OcrSearch.Core.csproj" />

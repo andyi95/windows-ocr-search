@@ -44,7 +44,7 @@
                 <Button Content="Save" MinWidth="80" Padding="8,2" IsDefault="True" Click="Save_Click" />
                 <Button Content="Cancel" MinWidth="80" Padding="8,2" Margin="8,0,0,0" IsCancel="True" />
             </StackPanel>
-            <TextBlock Text="Saving restarts indexing; a language change re-OCRs every file."
+            <TextBlock Text="Saving checks folders; new files can be indexed after save."
                        Foreground="Gray" FontSize="11" VerticalAlignment="Center"
                        TextWrapping="Wrap" Margin="0,0,12,0" />
         </DockPanel>

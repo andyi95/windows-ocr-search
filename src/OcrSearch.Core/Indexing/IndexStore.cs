@@ -21,6 +21,7 @@ public sealed class IndexStore : IDisposable
                 path TEXT NOT NULL UNIQUE,
                 size INTEGER NOT NULL,
                 mtime INTEGER NOT NULL,
+                hash TEXT NOT NULL DEFAULT '',
                 engine_id TEXT NOT NULL);
             CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(text);
             """;
@@ -43,7 +44,7 @@ public sealed class IndexStore : IDisposable
         }
     }
 
-    public void Upsert(string path, long size, long mtimeTicks, string engineId, string text)
+    public void Upsert(string path, long size, long mtimeTicks, string hash, string engineId, string text)
     {
         lock (_gate)
         {
@@ -52,13 +53,14 @@ public sealed class IndexStore : IDisposable
             using var upsert = _connection.CreateCommand();
             upsert.Transaction = transaction;
             upsert.CommandText = """
-                INSERT INTO files(path, size, mtime, engine_id) VALUES($path, $size, $mtime, $engineId)
-                ON CONFLICT(path) DO UPDATE SET size = $size, mtime = $mtime, engine_id = $engineId
+                INSERT INTO files(path, size, mtime, hash, engine_id) VALUES($path, $size, $mtime, $hash, $engineId)
+                ON CONFLICT(path) DO UPDATE SET size = $size, mtime = $mtime, hash = $hash, engine_id = $engineId
                 RETURNING id
                 """;
             upsert.Parameters.AddWithValue("$path", path);
             upsert.Parameters.AddWithValue("$size", size);
             upsert.Parameters.AddWithValue("$mtime", mtimeTicks);
+            upsert.Parameters.AddWithValue("$hash", hash);
             upsert.Parameters.AddWithValue("$engineId", engineId);
             var id = (long)upsert.ExecuteScalar()!;
 
